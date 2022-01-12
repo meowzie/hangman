@@ -47,7 +47,7 @@ class Game
     end
 
     def update(guess)
-      return puts 'Invalid input. Please input one letter' unless guess.length == 1
+      return puts 'Invalid input. Please input one letter' unless guess.length == 1 && ('a'..'z').to_a.include?(guess)
 
       guess.downcase!
       corrects = @answer.each_char.with_index.map { |letter, index| index if letter == guess }
