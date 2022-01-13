@@ -2,7 +2,6 @@
 
 require 'rainbow'
 require 'yaml'
-require 'pry-byebug'
 
 # Creates a new game
 class Game
