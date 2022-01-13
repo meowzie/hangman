@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require 'rainbow'
+require 'yaml'
+require 'pry-byebug'
 
 # Creates a new game
 class Game
@@ -11,28 +13,63 @@ class Game
 
   def looper
     while @answer.blanks.include?('_') && @counter.positive?
-      if @answer.incorrects.include?(guess = gets.chomp)
+      if @answer.incorrects.include?(@guess = gets.chomp)
         puts 'You already guessed that letter'
-        puts "\n#{@answer.update(guess)}   #{@counter}   #{@answer.incorrects_displayed.join(' ')}"
+        puts "\n#{@answer.update(@guess)}   #{@counter}   #{@answer.incorrects_displayed.join(' ')}"
         next
+      elsif @guess.downcase == 'save'
+        break
       end
-      print "\n#{@answer.update(guess)}   "
-      @counter -= 1 if @answer.corrects.empty? && @answer.valid?(guess)
+      print "\n#{@answer.update(@guess)}   "
+      @counter -= 1 if @answer.corrects.empty? && @answer.valid?(@guess)
       puts "#{@counter}   #{@answer.incorrects_displayed.join(' ')}"
     end
   end
 
   def play
-    word = @word.choose
-    @answer = Answer.new(word)
-    blanks = @answer.show
+    puts 'Press 1 to start a new game, or 2 to load a game'
+    input = gets.chomp
+    if input == '1'
+      word = @word.choose
+      @answer = Answer.new(word)
+      blanks = @answer.show
+    elsif input == '2'
+      contents = self.deserialize
+      @answer = contents[:answer]
+      @counter = contents[:counter]
+      blanks = @answer.blanks
+    end
+
     puts "\n#{blanks}   #{@counter}"
     self.looper
+
+    if @guess.downcase == 'save'
+      contents = { answer: @answer, counter: @counter }
+      serialize(contents)
+      return
+    end
+
     if @counter.zero?
       puts "\nYou lose! The word was #{word}"
-    else
+    elsif @counter.positive?
       puts "\nYou win! Yaysies!"
     end
+  end
+
+  def serialize(contents)
+    puts 'What would you like to name your game?'
+    filename = gets.chomp
+    Dir.mkdir('saved') unless Dir.exist?('saved')
+    File.open("./saved/#{filename}.yml", 'w') { |file| file.write(YAML.dump(contents)) }
+    puts 'Successfully saved'
+  end
+
+  def deserialize
+    return unless Dir.exist?('saved')
+
+    puts 'Which game would you like to load?'
+    filename = gets.chomp
+    File.open("saved/#{filename}.yml", 'r') { |file| YAML.load(file) }
   end
 
   # Creates words using the dictionary
